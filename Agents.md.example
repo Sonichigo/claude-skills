@@ -1,0 +1,35 @@
+# AGENTS.md
+
+## Project
+
+Go API server + React dashboard. Postgres 16, migrations via Liquibase.
+Monorepo managed with Make at the root and pnpm workspaces for the frontend.
+
+## Commands
+
+- Build: `make build` (never `go build` directly, it skips codegen)
+- Unit tests: `make test`
+- Integration tests: `make test-integration` (needs Docker running first)
+- Lint: `make lint` before every commit
+- Frontend dev server: `pnpm --filter web dev`
+
+## Key modules
+
+- `/internal/store` - all database access. Nothing else touches the DB.
+- `/internal/api` - HTTP handlers. Keep them thin. Logic lives in `/internal/service`.
+- `/internal/service` - business logic. This is where most changes land.
+- `/migrations` - Liquibase changelogs. Append only, never edit old files.
+- `/web` - React dashboard. Separate pnpm workspace with its own conventions.
+
+## Patterns
+
+- Wrap errors with context: `fmt.Errorf("load user: %w", err)`. No naked `return err`.
+- Every new endpoint needs a handler test AND a service test.
+- Feature flags go through `flags.IsEnabled()`. Never read env vars in business logic.
+- New DB queries belong in `/internal/store`, exposed through an interface.
+
+## Never touch
+
+- `/internal/api/gen` - generated from the OpenAPI spec. Run `make gen` instead.
+- Old files in `/migrations` - append a new changelog file.
+- `go.sum`, `pnpm-lock.yaml` - let the tools manage them.
